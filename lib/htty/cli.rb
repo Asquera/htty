@@ -1,5 +1,6 @@
 # Defines HTTY::CLI and loads constants defined within HTTY::CLI.
 
+require 'readline'
 require File.expand_path("#{File.dirname __FILE__}/cli/commands")
 require File.expand_path("#{File.dirname __FILE__}/cli/commands/help")
 require File.expand_path("#{File.dirname __FILE__}/cli/commands/quit")
@@ -63,13 +64,16 @@ private
   def prompt_for_command
     command_line = ''
     while command_line.empty? do
-      print strong(session.requests.last.uri) + normal('> ')
-      if (command_line = $stdin.gets).nil?
+      if (command_line = Readline.readline(prompt, true)).nil?
         raise Interrupt
       end
-      command_line.chomp!.strip!
+      command_line.chomp.strip!
     end
     HTTY::CLI::Commands.build_for command_line, :session => session
+  end
+
+  def prompt
+    strong(session.requests.last.uri) + normal('> ')
   end
 
 end
