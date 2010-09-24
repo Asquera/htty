@@ -51,9 +51,11 @@ module HTTY::CLI::Display
   def rescuing_from(*exception_classes)
     yield
   rescue Interrupt
+    raise if ARGV.include?("--debug")
     nil
   rescue *exception_classes => e
     $stderr.puts notice(sentence_case(e.message))
+    raise if ARGV.include?("--debug")
     nil
   end
 
