@@ -24,12 +24,12 @@ class HTTY::CLI
   end
 
   # Instantiates a new HTTY::CLI with the specified _command_line_arguments_.
-  def initialize(command_line_arguments)
+  def initialize(command_line_arguments, session_class = HTTY::Session)
     exit unless @session = rescuing_from(ArgumentError) do
       everything_but_options = command_line_arguments.reject do |a|
         a[0..0] == '-'
       end
-      HTTY::Session.new(everything_but_options.first)
+      session_class.new(everything_but_options.first)
     end
     HTTY::CLI.instance = self
   end
