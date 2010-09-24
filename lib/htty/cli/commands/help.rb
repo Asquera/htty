@@ -14,7 +14,20 @@ module HTTY::CLI::Commands; end
 class HTTY::CLI::Commands::Help < HTTY::CLI::Command
 
   include HTTY::CLI::Display
-
+  
+  def self.categories_in_order
+    @categories_in_order ||= ['Navigation',
+                           'Building Requests',
+                           'Issuing Requests',
+                           'Inspecting Responses',
+                           nil]
+  end
+  
+  def self.register_additional_category(name)
+    last = categories_in_order.pop
+    categories_in_order << name << last
+  end
+  
   # Returns the arguments for the command-line usage of the _help_ command.
   def self.command_line_arguments
     '[command]'
@@ -38,23 +51,25 @@ class HTTY::CLI::Commands::Help < HTTY::CLI::Command
   end
 
 private
-
+  def loaded_commands
+    HTTY::CLI.instance.commands
+  end
+  
   def display_help
-    maximum_width = HTTY::CLI::Commands.inject 0 do |max, c|
+    maximum_width = loaded_commands.inject 0 do |max, c|
       width = c.command_line.length + (c.command_line_arguments || '').length
       [max, width].max
     end
-    categories_in_order = ['Navigation',
-                           'Building Requests',
-                           'Issuing Requests',
-                           'Inspecting Responses',
-                           nil]
-    HTTY::CLI::Commands.select do |c|
+    categories_in_order = self.class.categories_in_order
+    
+    implemented = loaded_commands.select do |c|
       # Filter out commands not yet implemented.
       c.instance_methods(false).collect(&:to_sym).include?(:perform) ||
       (c.alias_for &&
        c.alias_for.instance_methods(false).collect(&:to_sym).include?(:perform))
-    end.group_by(&:category).sort_by do |category, commands|
+    end
+    groups = implemented.group_by(&:category)
+    groups.sort_by do |category, commands|
       # Group commands by category and give the categories a custom order.
       categories_in_order.index category
     end.each do |category, commands|
@@ -75,7 +90,7 @@ private
   end
 
   def display_help_for(argument)
-    if (command = HTTY::CLI::Commands.build_for(argument))
+    if (command = loaded_commands.build_for(argument))
       c = command.class
       puts
       puts indent(strong(c.command_line)) + " #{c.command_line_arguments}"
