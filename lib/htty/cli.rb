@@ -1,5 +1,4 @@
 # Defines HTTY::CLI and loads constants defined within HTTY::CLI.
-
 require 'readline'
 require File.expand_path("#{File.dirname __FILE__}/cli/commands")
 require File.expand_path("#{File.dirname __FILE__}/cli/commands/help")
@@ -11,11 +10,18 @@ module HTTY; end
 
 # Encapsulates the command-line interface to _htty_.
 class HTTY::CLI
-
   include HTTY::CLI::Display
 
   # Returns the HTTY::Session created from command-line arguments.
   attr_reader :session
+  
+  def self.instance=(cli)
+    @instance = cli
+  end
+  
+  def self.instance
+    @instance
+  end
 
   # Instantiates a new HTTY::CLI with the specified _command_line_arguments_.
   def initialize(command_line_arguments)
@@ -25,6 +31,7 @@ class HTTY::CLI
       end
       HTTY::Session.new(everything_but_options.first)
     end
+    HTTY::CLI.instance = self
   end
 
   # Takes over stdin, stdout, and stderr to expose #session to command-line
@@ -58,6 +65,10 @@ class HTTY::CLI
     end
     say_goodbye
   end
+  
+  def commands
+    @commands ||= HTTY::CLI::Commands::CommandSet.new(*command_folders)
+  end
 
 private
 
@@ -69,11 +80,16 @@ private
       end
       command_line.chomp.strip!
     end
-    HTTY::CLI::Commands.build_for command_line, :session => session
+    commands.build_for command_line, :session => session
   end
 
   def prompt
     strong(session.requests.last.uri) + normal('> ')
+  end
+  
+  
+  def command_folders
+    ["#{File.dirname __FILE__}/cli/commands"]
   end
 
 end
