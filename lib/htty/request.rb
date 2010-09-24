@@ -462,7 +462,7 @@ private
   def request!(method)
     request = response ? dup_without_response : self
     request.instance_variable_set '@request_method', method
-    HTTY::RequestsUtil.send method, request
+    HTTY.requests_util.send method, request
   end
 
 end
